@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.uv/
+
+# Data & artifacts (never commit the 42GB dataset or checkpoints)
+# Anchored to repo root so it only ignores the top-level dataset dir, NOT the
+# src/radarmd/data package.
+/data/
+!/data/.gitkeep
+*.png
+!docs/**/*.png
+*.jpg
+*.pt
+*.ckpt
+*.onnx
+outputs/
+wandb/
+lightning_logs/
+mlruns/
+
+# Notebooks scratch
+.ipynb_checkpoints/
+
+# OS / tooling
+.DS_Store
+.pytest_cache/
+.ruff_cache/
+.env

@@ -1,0 +1,34 @@
+# Base experiment config. Model-specific configs override fields here.
+# Consumed by scripts/train.py (added in stage 2).
+
+data:
+  data_dir: data
+  metadata_csv: data/Data_Entry_2017.csv
+  split: random            # "random" (CheXNet-style) or "official"
+  official_lists: null     # [train_val_list.txt, test_list.txt] when split=official
+  image_size: 224
+  batch_size: 32
+  num_workers: 4
+  seed: 42
+
+model:
+  backbone: densenet121    # torchvision/timm name
+  pretrained: true
+
+optim:
+  lr: 1.0e-4
+  weight_decay: 1.0e-5
+  max_epochs: 15
+  scheduler: cosine
+  warmup_epochs: 1
+  use_pos_weight: true     # BCEWithLogits pos_weight from train class balance
+
+trainer:
+  precision: 16-mixed
+  accelerator: auto        # picks mps locally, cuda on Colab
+  gradient_clip_val: 5.0
+  log_every_n_steps: 20
+
+wandb:
+  project: radarmd
+  mode: online             # set to "disabled" for local smoke runs

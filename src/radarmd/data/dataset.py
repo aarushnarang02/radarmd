@@ -18,18 +18,29 @@ from torch.utils.data import Dataset
 from .constants import PATHOLOGIES
 from .transforms import build_transforms
 
+# Image extensions we accept. The raw dataset ships PNGs; our resized Colab
+# shards extract to JPEGs. We key the index by filename *stem* so a metadata row
+# referencing ``00000001_000.png`` matches whichever format is on disk.
+_IMAGE_EXTS = (".png", ".jpg", ".jpeg")
+
+
+def image_key(name: str) -> str:
+    """Normalize an image filename to its extension-less lookup key."""
+    return Path(name).stem
+
 
 def index_images(root: str | Path) -> dict[str, Path]:
-    """Map every ``*.png`` filename under ``root`` to its full path.
+    """Map every image *stem* under ``root`` to its full path.
 
-    Handles both the flat sample layout and the full dataset's nested
-    ``images_XXX/images/`` folders. Later duplicates do not overwrite earlier
-    ones (filenames are unique across NIH folders anyway).
+    Handles the flat sample layout, the full dataset's nested
+    ``images_XXX/images/`` folders, and extracted JPEG shards. Later duplicates
+    do not overwrite earlier ones (filenames are unique across NIH folders).
     """
     root = Path(root)
     index: dict[str, Path] = {}
-    for p in root.rglob("*.png"):
-        index.setdefault(p.name, p)
+    for p in root.rglob("*"):
+        if p.suffix.lower() in _IMAGE_EXTS:
+            index.setdefault(p.stem, p)
     return index
 
 
@@ -43,9 +54,11 @@ class ChestXrayDataset(Dataset):
         image_size: int = 224,
         train: bool = True,
     ) -> None:
-        # Keep only rows whose image file we actually have on disk. This lets a
-        # split computed on full metadata run against the sample image set.
-        available = df["image"].isin(image_index.keys())
+        # Keep only rows whose image file we actually have on disk (matched by
+        # stem). This lets a split computed on full metadata run against the
+        # sample image set, or against resized JPEG shards.
+        keys = df["image"].map(image_key)
+        available = keys.isin(image_index.keys())
         self.df = df[available].reset_index(drop=True)
         self.image_index = image_index
         self.transform = build_transforms(image_size=image_size, train=train)
@@ -56,7 +69,7 @@ class ChestXrayDataset(Dataset):
 
     def __getitem__(self, idx: int):
         row = self.df.iloc[idx]
-        path = self.image_index[row["image"]]
+        path = self.image_index[image_key(row["image"])]
         # Some NIH PNGs are RGBA/palette; force single-channel grayscale.
         img = np.asarray(Image.open(path).convert("L"), dtype=np.float32)
         tensor = self.transform(img)

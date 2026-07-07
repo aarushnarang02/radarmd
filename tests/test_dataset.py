@@ -3,14 +3,15 @@
 import torch
 
 from radarmd.data.constants import NUM_CLASSES
-from radarmd.data.dataset import ChestXrayDataset, index_images
+from radarmd.data.dataset import ChestXrayDataset, image_key, index_images
 from radarmd.data.labels import load_metadata
 
 
 def test_index_images_finds_all(image_dir, metadata_csv):
     idx = index_images(image_dir)
     df = load_metadata(metadata_csv)
-    assert set(df["image"]).issubset(set(idx.keys()))
+    # Index is keyed by stem, so compare stems.
+    assert {image_key(n) for n in df["image"]}.issubset(set(idx.keys()))
 
 
 def test_dataset_item_shapes(image_dir, metadata_csv):

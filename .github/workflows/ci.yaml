@@ -23,10 +23,10 @@ jobs:
         env:
           # CPU-only torch wheels keep CI fast and small.
           UV_TORCH_BACKEND: cpu
-        run: uv pip install --system -e ".[dev,data]"
+        run: uv sync --extra dev --extra data
 
       - name: Ruff
-        run: ruff check .
+        run: uv run ruff check .
 
       - name: Pytest
-        run: pytest
+        run: uv run pytest

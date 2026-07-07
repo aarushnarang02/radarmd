@@ -1,0 +1,21 @@
+# Tiny config for local smoke tests: 1 epoch, small images, no pretrained
+# download required, W&B disabled. Points at whatever data dir you pass.
+model:
+  backbone: densenet121
+  pretrained: false
+
+optim:
+  lr: 1.0e-3
+  max_epochs: 1
+
+data:
+  image_size: 128
+  batch_size: 8
+  num_workers: 0
+
+trainer:
+  precision: 32
+  accelerator: cpu
+
+wandb:
+  mode: disabled

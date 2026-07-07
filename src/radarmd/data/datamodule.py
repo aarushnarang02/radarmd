@@ -10,7 +10,7 @@ import torch
 from lightning import LightningDataModule
 from torch.utils.data import DataLoader
 
-from .constants import NUM_CLASSES, PATHOLOGIES
+from .constants import PATHOLOGIES
 from .dataset import ChestXrayDataset, index_images
 from .labels import load_metadata
 from .splits import official_split, random_patient_split

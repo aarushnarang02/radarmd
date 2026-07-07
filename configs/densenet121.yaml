@@ -1,0 +1,12 @@
+# DenseNet-121 (CheXNet-style) full-training config. Inherits configs/base.yaml.
+model:
+  backbone: densenet121
+  pretrained: true
+
+optim:
+  lr: 1.0e-4
+  max_epochs: 15
+
+data:
+  image_size: 320
+  batch_size: 32

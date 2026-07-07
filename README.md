@@ -47,27 +47,41 @@ tests/          pytest suite (labels, splits, bboxes, transforms)
 ## Quickstart (local dev)
 
 ```bash
-uv venv && source .venv/bin/activate
-uv pip install -e ".[dev,data]"
+# Creates .venv and installs the project (editable) with dev + data extras
+uv sync --extra dev --extra data
 
 # Download the ~4GB sample dataset (needs Kaggle credentials)
 uv run python scripts/prepare_data.py --dest data
 
 # Sanity-check the pipeline: writes a labeled batch grid
-uv run python scripts/inspect_batch.py --data-dir data --metadata data/sample_labels.csv
+uv run python scripts/inspect_batch.py --data-dir data --metadata data/Data_Entry_2017.csv
 
 # Run the test suite
 uv run pytest
+
+# Smoke-train DenseNet-121 locally (CPU, 1 epoch) against a data dir
+uv run python scripts/train.py --config configs/smoke.yaml \
+    data.data_dir=data data.metadata_csv=data/Data_Entry_2017.csv
 ```
 
 Full training runs on Colab Pro against the complete dataset; local dev uses the
 sample so it fits on a laptop.
 
+## Full-scale training (Colab)
+
+The full dataset is 112k 1024px PNGs (~42GB) and Google Drive is slow with that
+many small files. `scripts/pack_shards.py` resizes everything to 320px and packs
+it into a handful of `.tar` shards (~4-5GB total) that live on Drive; each
+training run copies the shards to the VM's local SSD and extracts once, then
+reads normal files at full speed. `notebooks/colab_train.ipynb` drives the whole
+flow (download → pack → extract → baseline → tuned run → `wandb` sweep). The
+sweep space is defined in `configs/sweep.yaml`.
+
 ## Roadmap
 
 1. ✅ Data pipeline: labels, patient-level splits, bbox parsing, transforms, DataModule, tests
-2. ⬜ Model factory + LightningModule + `train.py`; local smoke run; W&B
-3. ⬜ Full Colab training (DenseNet-121 → ConvNeXt), ≥0.84 mean AUROC, 60+ W&B experiments
+2. ✅ Model factory (DenseNet-121 / ConvNeXt) + LightningModule (BCEWithLogits + AUROC) + `train.py`; local smoke run; W&B-ready
+3. 🚧 Colab training path ready: full-dataset resize+shard packing, warmup+cosine LR, W&B sweep config, Colab notebook. **GPU runs pending** (needs Colab Pro) to hit ≥0.84 mean AUROC across 60+ experiments.
 4. ⬜ Grad-CAM localization validated vs 880 GT boxes (IoU@0.5, pointing game)
 5. ⬜ Evaluation suite: operating thresholds with a sensitivity floor on critical findings
 6. ⬜ ONNX export + parity/latency benchmark; FastAPI + Gradio app

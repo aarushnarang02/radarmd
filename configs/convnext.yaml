@@ -1,0 +1,13 @@
+# ConvNeXt-Tiny full-training config. Inherits configs/base.yaml.
+model:
+  backbone: convnext_tiny
+  pretrained: true
+
+optim:
+  lr: 5.0e-5           # transformers-era backbones prefer a smaller LR
+  weight_decay: 5.0e-2
+  max_epochs: 20
+
+data:
+  image_size: 320
+  batch_size: 32

@@ -39,6 +39,12 @@ class ChestXrayClassifier(LightningModule):
         self.model = create_model(
             backbone=backbone, pretrained=pretrained, num_classes=num_classes, drop_rate=drop_rate
         )
+        # Always register a pos_weight buffer (ones == unweighted) so the loss's
+        # state_dict shape is identical whether or not weighting is used. Without
+        # this, a checkpoint trained with pos_weight fails to load into a module
+        # built with pos_weight=None (missing/unexpected buffer key).
+        if pos_weight is None:
+            pos_weight = torch.ones(num_classes)
         self.criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
 
         # One AUROC metric per split; macro-averaged over the 14 classes, plus

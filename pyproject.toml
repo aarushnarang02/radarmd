@@ -63,3 +63,7 @@ ignore = ["E501"]  # line length handled by formatter; long strings tolerated
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+# Resolve the package from src/ directly so the suite is immune to editable-
+# install hiccups (uv's incremental editable .pth can drop off on `uv sync
+# --extra`); a clean `uv sync` still installs it normally for scripts.
+pythonpath = ["src"]

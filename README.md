@@ -82,8 +82,8 @@ sweep space is defined in `configs/sweep.yaml`.
 1. ✅ Data pipeline: labels, patient-level splits, bbox parsing, transforms, DataModule, tests
 2. ✅ Model factory (DenseNet-121 / ConvNeXt) + LightningModule (BCEWithLogits + AUROC) + `train.py`; local smoke run; W&B-ready
 3. 🚧 Colab training path ready: full-dataset resize+shard packing, warmup+cosine LR, W&B sweep config, Colab notebook. **GPU runs pending** (needs Colab Pro) to hit ≥0.84 mean AUROC across 60+ experiments.
-4. ⬜ Grad-CAM localization validated vs 880 GT boxes (IoU@0.5, pointing game)
-5. ⬜ Evaluation suite: operating thresholds with a sensitivity floor on critical findings
+4. ✅ Grad-CAM localization + validation harness vs the 880 GT boxes (pointing game, IoU@{0.1,0.25,0.5}); `scripts/evaluate_localization.py`. Runs on real trained checkpoints.
+5. ✅ Evaluation suite: per-class operating thresholds with a sensitivity floor on serious findings (FNR < 8%), plus AUROC/AP/sensitivity/specificity/F1 reports; `scripts/evaluate.py`.
 6. ⬜ ONNX export + parity/latency benchmark; FastAPI + Gradio app
 7. ⬜ Docker + Cloud Run + GitHub Actions CI/CD + Prometheus metrics
 

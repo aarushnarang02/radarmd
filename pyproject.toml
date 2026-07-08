@@ -58,7 +58,10 @@ extend-exclude = ["notebooks"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
-ignore = ["E501"]  # line length handled by formatter; long strings tolerated
+ignore = [
+    "E501",  # line length handled by formatter; long strings tolerated
+    "B008",  # FastAPI relies on function calls (Depends/File) in arg defaults
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

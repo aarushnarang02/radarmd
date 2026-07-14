@@ -64,8 +64,10 @@ uv run python scripts/train.py --config configs/smoke.yaml \
     data.data_dir=data data.metadata_csv=data/Data_Entry_2017.csv
 ```
 
-Full training runs on Colab Pro against the complete dataset; local dev uses the
-sample so it fits on a laptop.
+Full training runs on the complete dataset via a GPU notebook; local dev uses the
+sample so it fits on a laptop. Two training notebooks are provided:
+`notebooks/kaggle_train.ipynb` (free Kaggle GPU, dataset pre-mounted, no download)
+and `notebooks/colab_train.ipynb` (Colab, downloads + shards to Drive).
 
 ## Full-scale training (Colab)
 

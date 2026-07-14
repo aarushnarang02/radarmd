@@ -1,0 +1,7 @@
+# Keep the build context tiny: only src/ and models/ are copied.
+*
+!src
+!models
+!docker
+src/**/__pycache__
+models/*.int8.onnx

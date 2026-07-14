@@ -20,9 +20,8 @@ from monai.transforms import (
     ToTensor,
 )
 
-# ImageNet channel statistics (after scaling to [0,1] and repeating to 3ch).
-IMAGENET_MEAN = (0.485, 0.456, 0.406)
-IMAGENET_STD = (0.229, 0.224, 0.225)
+# Re-exported from constants (canonical, torch-free home) for existing callers.
+from .constants import IMAGENET_MEAN, IMAGENET_STD  # noqa: E402
 
 
 def _repeat_to_3ch(x):

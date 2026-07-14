@@ -49,6 +49,12 @@ LOCALIZED_PATHOLOGIES: tuple[str, ...] = (
     "Pneumothorax",
 )
 
+# ImageNet channel statistics, applied after scaling to [0,1] and repeating the
+# grayscale X-ray to 3 channels. Lives here (not transforms.py) so the torch-free
+# serving path can import it without pulling in MONAI.
+IMAGENET_MEAN: tuple[float, float, float] = (0.485, 0.456, 0.406)
+IMAGENET_STD: tuple[float, float, float] = (0.229, 0.224, 0.225)
+
 # Findings where a missed diagnosis is most dangerous. Stage 5 enforces a
 # sensitivity floor (low false-negative rate) on these when picking operating
 # thresholds, rather than optimizing raw accuracy.

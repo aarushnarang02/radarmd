@@ -15,7 +15,7 @@ import numpy as np
 from PIL import Image
 
 from ..data.constants import CRITICAL_FINDINGS, NUM_CLASSES, PATHOLOGIES
-from ..data.transforms import build_transforms
+from .preprocess import preprocess_image
 
 
 @dataclass
@@ -41,7 +41,6 @@ class OnnxPredictor:
             str(onnx_path), providers=["CPUExecutionProvider"]
         )
         self.image_size = image_size
-        self.transform = build_transforms(image_size=image_size, train=False)
         self.thresholds = self._load_thresholds(thresholds)
 
     @staticmethod
@@ -58,9 +57,9 @@ class OnnxPredictor:
         return vec
 
     def _preprocess(self, image: Image.Image) -> np.ndarray:
-        arr = np.asarray(image.convert("L"), dtype=np.float32)
-        tensor = self.transform(arr)  # (3, H, W)
-        return tensor.numpy()[None, ...]  # add batch dim
+        # Torch-free path (PIL + numpy) so the serving container stays slim;
+        # parity with the MONAI eval pipeline is pinned by tests.
+        return preprocess_image(image, self.image_size)
 
     def predict_probs(self, image: Image.Image) -> np.ndarray:
         """Return the (14,) probability vector for one PIL image."""

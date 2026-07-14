@@ -85,7 +85,7 @@ sweep space is defined in `configs/sweep.yaml`.
 4. ✅ Grad-CAM localization + validation harness vs the 880 GT boxes (pointing game, IoU@{0.1,0.25,0.5}); `scripts/evaluate_localization.py`. Runs on real trained checkpoints.
 5. ✅ Evaluation suite: per-class operating thresholds with a sensitivity floor on serious findings (FNR < 8%), plus AUROC/AP/sensitivity/specificity/F1 reports; `scripts/evaluate.py`.
 6. ✅ ONNX export (+ INT8 dynamic quantization) with PyTorch/ORT parity checks, a CPU latency benchmark, an ONNX-Runtime `FastAPI` service (`/predict`, `/health`, Prometheus `/metrics`), and a Gradio UI with Grad-CAM overlays.
-7. ⬜ Docker + Cloud Run + GitHub Actions CI/CD + Prometheus metrics
+7. ✅ Deployment: slim torch-free CPU Docker image (~426MB), Cloud Run deploy workflow (GitHub Actions), and Prometheus `/metrics`. Verified the container serves `/health`, `/predict`, `/metrics` locally.
 
 ## Serving (Stage 6)
 
@@ -116,6 +116,31 @@ target to get the representative number. PyTorch/ORT output parity is verified t
 > **Local dev note:** `uv run` can occasionally drop the editable install of the
 > package. Tests are immune (pytest sets `pythonpath=["src"]`); for scripts, run
 > with `PYTHONPATH=src` (or re-run `uv sync`) if you hit `ModuleNotFoundError`.
+
+## Deployment (Stage 7)
+
+The serving image is **torch-free** — inference runs on ONNX Runtime and images
+are preprocessed with PIL + numpy (`serve/preprocess.py`), so the container is
+~426MB instead of ~2GB and Cloud Run cold starts stay fast. Preprocessing parity
+with the MONAI training pipeline is pinned by `tests/test_preprocess_parity.py`.
+
+```bash
+# Export the model, then build and run the container locally
+uv run python scripts/export_onnx.py --checkpoint outputs/checkpoints/best.ckpt --out models/radarmd.onnx
+docker build -f docker/Dockerfile -t radarmd .
+docker run --rm -p 8080:8080 radarmd
+curl -s localhost:8080/health
+```
+
+**Cloud Run CI/CD** (`.github/workflows/deploy.yaml`) builds the image, pulls the
+trained model from GCS, deploys to Cloud Run, and smoke-checks `/health`. It runs
+on a `v*` tag or manual dispatch and needs these repo secrets: `GCP_PROJECT_ID`,
+`GCP_SA_KEY`, `GCS_MODEL_URI`. One-time GCP setup:
+
+```bash
+gcloud artifacts repositories create radarmd --repository-format=docker --location=us-central1
+# upload the exported model: gcloud storage cp models/radarmd.onnx gs://<bucket>/radarmd.onnx
+```
 
 ## Data & license
 

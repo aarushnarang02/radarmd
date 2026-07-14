@@ -1,0 +1,72 @@
+# Build the serving image and deploy to Cloud Run.
+#
+# Trigger: manual (workflow_dispatch) or a version tag push (v*).
+#
+# Required repository secrets:
+#   GCP_PROJECT_ID     e.g. radarmd-prod
+#   GCP_SA_KEY         JSON key for a service account with roles:
+#                      Artifact Registry Writer, Cloud Run Admin, SA User
+#   GCS_MODEL_URI      gs://<bucket>/radarmd.onnx  (the trained, exported model;
+#                      models are never committed to git)
+#
+# One-time GCP setup (documented in README):
+#   gcloud artifacts repositories create radarmd --repository-format=docker \
+#       --location=us-central1
+
+name: Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+env:
+  REGION: us-central1
+  SERVICE: radarmd
+  REPO: radarmd
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Fetch trained model from GCS
+        run: |
+          mkdir -p models
+          gcloud storage cp "${{ secrets.GCS_MODEL_URI }}" models/radarmd.onnx
+
+      - name: Build and push image
+        run: |
+          IMAGE="${REGION}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${REPO}/${SERVICE}:${GITHUB_SHA::7}"
+          gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+          docker build -f docker/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy "$SERVICE" \
+            --image "$IMAGE" \
+            --project "${{ secrets.GCP_PROJECT_ID }}" \
+            --region "$REGION" \
+            --platform managed \
+            --allow-unauthenticated \
+            --cpu 2 --memory 1Gi \
+            --min-instances 0 --max-instances 3 \
+            --port 8080
+
+      - name: Smoke-check /health
+        run: |
+          URL=$(gcloud run services describe "$SERVICE" \
+            --project "${{ secrets.GCP_PROJECT_ID }}" --region "$REGION" \
+            --format 'value(status.url)')
+          curl -fsS "$URL/health" | tee /dev/stderr | grep -q '"status":"ok"'

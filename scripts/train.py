@@ -63,9 +63,16 @@ def main() -> None:
     ap.add_argument("--out", default="outputs", help="output/checkpoint directory")
     ap.add_argument("--fast-dev-run", action="store_true", help="Lightning fast_dev_run")
     ap.add_argument("overrides", nargs="*", help="dotted key=value config overrides")
-    args = ap.parse_args()
+    # parse_known_args so `key=value` overrides work in any position, even after
+    # optional flags like --out (argparse can't interleave a nargs=* positional
+    # with optionals otherwise).
+    args, extra = ap.parse_known_args()
+    stray = [a for a in extra if "=" not in a]
+    if stray:
+        ap.error(f"unrecognized arguments: {' '.join(stray)}")
+    overrides = list(args.overrides) + [a for a in extra if "=" in a]
 
-    cfg = load_config(args.config, base_path=args.base, overrides=args.overrides)
+    cfg = load_config(args.config, base_path=args.base, overrides=overrides)
     L.seed_everything(cfg.data.get("seed", 42), workers=True)
 
     dm = build_datamodule(cfg)

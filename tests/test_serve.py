@@ -7,11 +7,16 @@ import pytest
 import torch
 from PIL import Image
 
-from radarmd.data.constants import NUM_CLASSES, PATHOLOGIES
-from radarmd.models.factory import create_model
-from radarmd.serve.onnx_export import export_onnx, quantize_onnx, verify_parity
-from radarmd.serve.overlay import overlay_heatmap
-from radarmd.serve.predictor import OnnxPredictor
+# The serving stack is optional (`.[serve]`); skip the whole module if its deps
+# (onnxruntime, fastapi) aren't installed rather than failing collection.
+pytest.importorskip("onnxruntime")
+pytest.importorskip("fastapi")
+
+from radarmd.data.constants import NUM_CLASSES, PATHOLOGIES  # noqa: E402
+from radarmd.models.factory import create_model  # noqa: E402
+from radarmd.serve.onnx_export import export_onnx, quantize_onnx, verify_parity  # noqa: E402
+from radarmd.serve.overlay import overlay_heatmap  # noqa: E402
+from radarmd.serve.predictor import OnnxPredictor  # noqa: E402
 
 IMG_SIZE = 64
 

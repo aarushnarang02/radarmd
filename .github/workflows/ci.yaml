@@ -23,7 +23,8 @@ jobs:
         env:
           # CPU-only torch wheels keep CI fast and small.
           UV_TORCH_BACKEND: cpu
-        run: uv sync --extra dev --extra data
+        # All extras so the full suite (interpret + serve) runs in CI.
+        run: uv sync --extra dev --extra data --extra interpret --extra serve
 
       - name: Ruff
         run: uv run ruff check .
